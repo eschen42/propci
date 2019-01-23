@@ -11,47 +11,39 @@ output:
 ## Introductory remarks
 
 Many ways have been developed to estimate the confidence interval for 
-an observed propoortion.
-See 
-[https://en.wikipedia.org/wiki/Binomial_proportion_confidence_interval](https://en.wikipedia.org/wiki/Binomial_proportion_confidence_interval)
-for a list of them.
-Agresti and Coull (1998) recommend that elementary statistics instruction
+an observed proportion between success and trials where the probability
+of success is fixed.  This document will explain why I think that the
+following  line of R code is all that you need to answer this question:
+
+```
+epitools::binom.wilson(x = successes, n = trials, conf.level = 0.95)
+```
+
+For a list of several methods for computing the confidence interval, see 
+[https://en.wikipedia.org/wiki/Binomial_proportion_confidence_interval](https://en.wikipedia.org/wiki/Binomial_proportion_confidence_interval).
+
+Agresti and Coull (1998) recommended that elementary statistics instruction
 prefer the "Score" method of Wilson (1927) for estimating the confidence
 interval over the simpler, but insufficiently conservative, normal
-approximation.  I prefer the Wilson Score method because it performs well
+approximation.  Wilson's formula is presented below.
+
+I personally prefer the Wilson Score method because it performs well
 for proportions that approach 0 or 1, where the normal approximation 
-breaks down.  It is a bit more complicated to calculate.
+breaks down.  It is a bit more complicated to calculate than using
+the normal approximation, but it is simpler than many alternatives,
+making it is easier for me to understand (and derive).  Some day I 
+will be ambitious enough to add the equations for the derivation 
+of Wilson's formula to this document.
 
+## My test case
 
-## A sanity check
-
-Before computing the confidence interval, I first will take some wild
-guesses at the probabilities near the boundaries.  For my example, I will
-assume that 73 successes were observed for 76 trials, and that I want a
-95% confidence interval.
-
-I manually adjusted my guesses to obtain a 2.5% area under probability 
-density function (PDF) curve for each tail.  This would require 
-integration, but the cumulative density function (CDF) is the integration
-of the PDF.
-For R, the `stats::pbinom` function implements CDF for the binomial distribution.
-
-So, what value do I expecting to be near the lower limit of the CI?
+For my example, I will assume that 73 successes were observed for 
+76 trials, and that I want a 95% confidence interval.
 
 ```{r}
 successes <- 73
 trials <- 76
 proportion <- as.double(successes) / as.double(trials)
-pbinom(q = successes, size = trials, prob = proportion)
-low.guess <- 0.90816
-high.guess <- 0.99178
-pbinom(q = successes, size = trials, prob = low.guess)
-```
-
-And, what value do I expecting to be near the upper limit of the CI?
-
-```{r}
-pbinom(q = successes, size = trials, prob = high.guess, lower.tail = FALSE)
 ```
 
 ## The Wilson Score Interval - from Wilson 1927
@@ -83,7 +75,7 @@ epi_wilson_ci <-
 print(epi_wilson_ci)
 ```
 
-To demystify the `epitools` implemntation, I coded it directly from the equation above: 
+Hoping to demystify the `epitools` implementation somewhat, I coded it directly from Wilson's equation: 
 
 ```{r}
 # computational equivalent of binom.wilson from CRAN 'epitools' package
@@ -92,20 +84,19 @@ binom.wilson <-
     lambda  <- qnorm(0.5*(1 + conf.level))
     # Adapted from Wilson 1927, mostly by multipling numerator
     #   and denominator by n to reduce roundoff error
-    n_t     <- ( lambda^2 )
-    n_p_0   <- x
-    n_q_0   <- n - x
-    denom   <- n + n_t
-    center  <- ( n_p_0 + n_t / 2 )
-    radical <- ( n_p_0 * n_q_0 + n * (n_t / 4) ) * n_t / n
-    # continuing
+    nt     <- ( lambda^2 )
+    np_0   <- x
+    nq_0   <- n - x
+    denom   <- n + nt
+    center  <- ( np_0 + nt / 2 )
+    radical <- ( np_0 * nq_0 + n * (nt / 4) ) * nt / n
     delta   <- sqrt(radical)
     R.lower <- ( center - delta ) / denom
     R.upper <- ( center + delta ) / denom
     data.frame(
       x = x,
       n = n,
-      proportion = as.double(n_p_0) / as.double(n), 
+      proportion = as.double(np_0) / as.double(n), 
       lower = R.lower,
       upper = R.upper,
       conf.level = conf.level
@@ -122,43 +113,106 @@ print(wilson_ci$lower - epi_wilson_ci$lower)
 print(wilson_ci$upper - epi_wilson_ci$upper)
 ```
 
-I have not contrasted the two implementations to see which suffers more from round-off error, but it seems clear that they are consistent with one another.
+I have not contrasted the two implementations to see which suffers more from round-off error, but it seems clear that they are consistent with one another.  So, having validated that the epitools implementation gives the result that I expect, I can use either one - basically, the choice is between loading another library *vs.* adding a custom function.
 
-## Conclusions 
+## A frame of reference for reasonability of the confidence interval
+
+Does the confidence interval seem reasonable?
+
+I manually adjusted some "guesses"" to obtain a 2.5% area under probability 
+density function (PDF) curve for each tail of the binomial distribution.
+Because, in actuality, this would require integration, the better choice is
+to use the cumulative density function (CDF), which is the integration of the PDF.
+For R, the `stats::pbinom` function implements CDF for the binomial distribution.
+
+So, what proportion do I expect to be near the lower limit of the CI?
+I expect `low.guess` to be near, *i.e.*:
 
 ```{r}
-print(
-  sprintf("For %d successes over %d trials:"
-  , wilson_ci$x
-  , wilson_ci$n
-  )
-)
-print(
-  sprintf("Proportion: %f"
-  , wilson_ci$proportion
-  )
-)
-print(
-  sprintf("Wilson estimate of confidence interval for proportion: [%f,%f]"
-  , wilson_ci$lower
-  , wilson_ci$upper
-  )
-)
-print(
-  sprintf("My low and high guesses: %f,%f"
-  , low.guess
-  , high.guess
-  )
-)
-print(
-  sprintf("Differences from my guesses: %f, %f"
-  , wilson_ci$lower - low.guess
-  , wilson_ci$upper - high.guess
+low.guess <- 0.90816
+1 - pbinom(q = successes, size = trials, prob = low.guess)
+```
+
+And, I expect `high.guess` to be near the upper limit of the CI:
+
+```{r}
+high.guess <- 0.99178
+1 - pbinom(q = successes, size = trials, prob = high.guess, lower.tail = FALSE)
+```
+
+How does the actual proportion behave?  I would expect the CDF for to be 50%, but it is only somewhat close:
+
+```{r}
+1 - pbinom(q = successes, size = trials, prob = proportion)
+```
+
+Increasing the number of successes and trials without changing the proportion shows that the small number of trials explains the deviation from my expectation.
+
+```{r}
+1 - pbinom(q = 100 * successes, size = 100 * trials, prob = proportion)
+```
+
+This begs the question: "If you are truly obsessed with having a 'nicely behaved' proportion, how much should you increase the number of trials?"  Here is a quick plot to address that question:
+
+```{r}
+plot(
+  x = x <- c(1,2,4,8,16,32,48),
+  y = y <- sapply(
+    X = x, 
+    FUN = function(x){
+      1 - pbinom(q = x * successes, size = x * trials, prob = proportion)
+    }
   )
 )
 ```
 
-So, this seems to me to pass the sanity checks.  I think that the results are not the same at least in part because the sanity checks are based on different actual proportions.
+So, it looks like the point of diminishing returns would be around an eight-fold increase in the number of trials.
+
+## Conclusions
+
+It turns out that my reasonability guesses are pretty close to the limits of the confidence interval:
+
+```{r}
+cat(
+  sprintf("For %d successes over %d trials:"
+  , wilson_ci$x
+  , wilson_ci$n
+  ),
+  sprintf("Proportion: %f"
+  , wilson_ci$proportion
+  ),
+  sprintf("Wilson estimate of confidence interval for proportion: [%f,%f]"
+  , wilson_ci$lower
+  , wilson_ci$upper
+  ),
+  sprintf("My low and high guesses: %f,%f"
+  , low.guess
+  , high.guess
+  ),
+  sprintf("Differences from my guesses: %f, %f"
+  , wilson_ci$lower - low.guess
+  , wilson_ci$upper - high.guess
+  ),
+  sep = "\n"
+)
+```
+
+I think that the results differ in part because the guesses checks are based on different actual proportions and in part because the number of trials is low.  I don't think that this casts doubt upon the confidence interval; rather, increasing the number of trials narrows the confidence interval:
+
+```{r}
+print(binom.wilson(x = 8 * successes, n = 8 * trials, conf.level = 0.95))
+plot(
+  x = x <- c(1,2,4,8,16,32,48),
+  y = y <- sapply(
+    X = x,
+    FUN = function(x){
+      binom.wilson(x = x * successes, n = x * trials, conf.level = 0.95)$lower
+    }
+  )
+)
+```
+
+Again, an eight-fold increase in the number of trials appears to be the point of diminishing returns.
 
 ## About this document
 
