@@ -1,5 +1,6 @@
 ---
-title: "Binomial Proportion Confidence Interval"
+title: 'Estimating a Confidence Interval for a Proportion'
+subtitle: 'Using the "Wilson Score Interval" in R'
 author: "Art Eschenlauer"
 date: "January 25, 2019"
 output:
@@ -13,7 +14,7 @@ output:
 Many ways have been developed to estimate the confidence interval for 
 an observed proportion between success and trials where the probability
 of success is fixed.  This document will explain why I think that the
-following  line of R code is all that you need to answer this question:
+following  line of R code is all that you need to estimate the confidence interval:
 
 ```
 epitools::binom.wilson(x = successes, n = trials, conf.level = 0.95)
@@ -29,11 +30,9 @@ approximation.  Wilson's formula is presented below.
 
 I personally prefer the Wilson Score method because it performs well
 for proportions that approach 0 or 1, where the normal approximation 
-breaks down.  It is a bit more complicated to calculate than using
-the normal approximation, but it is simpler than many alternatives,
-making it is easier for me to understand (and derive).  Some day I 
-will be ambitious enough to add the equations for the derivation 
-of Wilson's formula to this document.
+breaks down.
+To facilitate my understanding of the Wilson Score formula, I derived it; see section
+'[Derivation of Wilson's "Score Interval" formula](#derivation-of-wilsons-score-interval-formula)'.
 
 ## My test case
 
@@ -51,21 +50,22 @@ proportion <- as.double(successes) / as.double(trials)
 The 1927 paper by Edwin Bidwell Wilson presented the following formula as a 
 practical way to estimate the confidence interval for a proportion:
 
-$$
-\newcommand{\relmiddle}[1]{\mathrel{}\middle#1\mathrel{}}
-{
-\left. 
-p = \frac{p_0 + \frac{t}{2} \pm \sqrt{p_0q_0t + \frac{t^2}{4}}}{1 + t} 
-\relmiddle| 
-\begin{aligned}\
-\lambda &= 1.96 \text{ (for 95 percent confidence)},\\
-t &= \frac{\lambda^2}{n}, \quad
-p_0 = \frac{x}{n}, \quad
-q_0 = \frac{n - x}{n}\\
-\end{aligned}
-\right.
-}
-$$
+\begin{equation}
+  \label{eq:1}
+  \newcommand{\relmiddle}[1]{\mathrel{}\middle#1\mathrel{}}
+  {
+  \left. 
+  p = \frac{p_0 + \frac{t}{2} \pm \sqrt{p_0q_0t + \frac{t^2}{4}}}{1 + t} 
+  \relmiddle| 
+  \begin{aligned}\
+  \lambda &= 1.96 \text{ (for 95 percent confidence)},\\
+  t &= \frac{\lambda^2}{n}, \quad
+  p_0 = \frac{x}{n}, \quad
+  q_0 = \frac{n - x}{n}\\
+  \end{aligned}
+  \right.
+  }
+\end{equation}
 
 The CRAN R package `epitools` provides the `binom.wilson` function which can compute this:
 
@@ -162,7 +162,10 @@ plot(
     FUN = function(x){
       1 - pbinom(q = x * successes, size = x * trials, prob = proportion)
     }
-  )
+  ),
+  xlab = "Fold increase in number of trials",
+  ylab = "Area under lefthand tail",
+  main = "Tuning number of trials to population proportion"
 )
 ```
 
@@ -223,6 +226,79 @@ plot(x = x, y = y.lower, main = lbl_lower, xlab = lbl_x, ylab = lbl_y)
 ```
 
 Again, an eight-fold increase in the number of trials appears to be the point of diminishing returns.
+
+## Derivation of Wilson's "Score Interval" formula
+
+Let $X$ be a binomally distributed random variable and let $q = 1 - p$:
+
+\begin{equation}
+X \widetilde{\,\,\,\,} B(n,p), \qquad
+\overline{x} = n p, \qquad
+{\sigma_x}^2 = n p (1-p) = n p q
+\end{equation}
+
+Dividing by n:
+
+\begin{equation}
+p = \frac{\overline{x}}{n}, \qquad
+{\sigma_p}^2 = \frac{{\sigma_x}^2}{n^2} = \frac{p q}{n}
+\end{equation}
+
+For a 95 percent confidence interval:
+
+\begin{equation}
+\lambda = 1.96, \qquad
+\text{confidence interval (score interval)} = [p - \lambda \sigma,p + \lambda \sigma]
+\end{equation}
+
+For simplicity, define t:
+
+\begin{equation}
+t = \frac{\lambda^2}{n}
+\end{equation}
+
+For $p_0$ (the observed value $p$) at either confidence limit:
+
+\begin{equation}
+(p_0 - p)^2 = \frac{\lambda^2 p q}{n} = p(1-p)t
+\end{equation}
+
+Substituting for $\lambda$:
+
+\begin{equation}
+0 = {p_0}^2 - 2 p p_0 + p^2 - pt + p^2 t
+\end{equation}
+
+Distributing $1 + t$:
+
+\begin{equation}
+0 = (1 + t)p^2 - 2(p_0 + t)p + {p_0}^2
+\end{equation}
+
+Dividing by 2:
+
+\begin{equation}
+0 = \frac{(1 + t)}{2}p^2 - (p_0 + \frac{t}{2})p + \frac{1}{2}{p_0}^2
+\end{equation}
+
+Applying the quadratic formula:
+
+\begin{equation}
+p = \frac{p_0 + \frac{t}{2} \pm \sqrt{{p_0}^2+p_0t+\frac{t^2}{4}-({p_0}^2 + {p_0}^2t)}}{1 + t}
+\end{equation}
+
+Applying $0 = {p_0}^2 - {p_0}^2$:
+
+\begin{equation}
+p = \frac{p_0 + \frac{t}{2} \pm \sqrt{p_0t+\frac{t^2}{4}-{p_0}^2t}}{1 + t}
+\end{equation}
+
+Commuting $p_0t-{p_0}^2t$: 
+
+\begin{equation}
+p = \frac{p_0 + \frac{t}{2} \pm \sqrt{p_0(1 - p_0)t+\frac{t^2}{4}}}{1 + t}
+\end{equation}
+
 
 ## About this document
 
