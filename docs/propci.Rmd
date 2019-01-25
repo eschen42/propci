@@ -1,7 +1,7 @@
 ---
 title: "Binomial Proportion Confidence Interval"
 author: "Art Eschenlauer"
-date: "January 23, 2019"
+date: "January 25, 2019"
 output:
   pdf_document: 
     toc: yes
@@ -229,6 +229,10 @@ Again, an eight-fold increase in the number of trials appears to be the point of
 This document was produced from an RMarkdown file, the source of which should be at:
 
 [https://eschen42.github.io/propci/propci.Rmd](https://eschen42.github.io/propci/propci.Rmd)
+
+Revisions:
+- January 23, First revision
+- January 25, Added upper confidence limits plot
 
 ## References
 
