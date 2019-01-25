@@ -201,15 +201,25 @@ I think that the results differ in part because the guesses checks are based on 
 
 ```{r}
 print(binom.wilson(x = 8 * successes, n = 8 * trials, conf.level = 0.95))
-plot(
-  x = x <- c(1,2,4,8,16,32,48),
-  y = y <- sapply(
-    X = x,
-    FUN = function(x){
-      binom.wilson(x = x * successes, n = x * trials, conf.level = 0.95)$lower
-    }
-  )
+x <- c(1,2,4,8,16,32,48)
+y.lower <- sapply(
+  X = x,
+  FUN = function(x){
+    binom.wilson(x = x * successes, n = x * trials, conf.level = 0.95)$lower
+  }
 )
+y.upper <- sapply(
+  X = x,
+  FUN = function(x){
+    binom.wilson(x = x * successes, n = x * trials, conf.level = 0.95)$upper
+  }
+)
+lbl_upper <- "Confidence Interval Upper Limit vs. Number of Trials"
+lbl_lower <- "Confidence Interval Lower Limit vs. Number of Trials"
+lbl_x <- "Fold-Increase in Number of Trials"
+lbl_y <- "95% Confidence Interval"
+plot(x = x, y = y.upper, main = lbl_upper, xlab = lbl_x, ylab = lbl_y)
+plot(x = x, y = y.lower, main = lbl_lower, xlab = lbl_x, ylab = lbl_y)
 ```
 
 Again, an eight-fold increase in the number of trials appears to be the point of diminishing returns.
