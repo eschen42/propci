@@ -231,6 +231,7 @@ This document was produced from an RMarkdown file, the source of which should be
 [https://eschen42.github.io/propci/propci.Rmd](https://eschen42.github.io/propci/propci.Rmd)
 
 Revisions:
+
 - January 23, First revision
 - January 25, Added upper confidence limits plot
 
