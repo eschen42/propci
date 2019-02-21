@@ -2,7 +2,7 @@
 title: 'Estimating a Confidence Interval for a Proportion'
 subtitle: 'Using the "Wilson Score Interval" in R'
 author: "Art Eschenlauer"
-date: "January 25, 2019"
+date: "February 21, 2019"
 output:
   pdf_document: 
     toc: yes
@@ -13,15 +13,14 @@ output:
 
 Many ways have been developed to estimate the confidence interval for 
 an observed proportion between success and trials where the probability
-of success is fixed.  This document will explain why I think that the
-following  line of R code is all that you need to estimate the confidence interval:
+of success is fixed.  This document will explain **why I think that the
+following  line of R code is all that you need to estimate the confidence interval**.
 
 ```
 epitools::binom.wilson(x = successes, n = trials, conf.level = 0.95)
 ```
 
-For a list of several methods for computing the confidence interval, see 
-[https://en.wikipedia.org/wiki/Binomial_proportion_confidence_interval](https://en.wikipedia.org/wiki/Binomial_proportion_confidence_interval).
+For lists of several methods for computing the confidence interval, see Agresti and Coull (1998) and Newcombe (1998), which are combined and summarized in the Wikipedia article, "Binomial proportion confidence interval".
 
 Agresti and Coull (1998) recommended that elementary statistics instruction
 prefer the "Score" method of Wilson (1927) for estimating the confidence
@@ -227,6 +226,10 @@ plot(x = x, y = y.lower, main = lbl_lower, xlab = lbl_x, ylab = lbl_y)
 
 Again, an eight-fold increase in the number of trials appears to be the point of diminishing returns.
 
+```{r, results='asis', echo=FALSE}
+cat("\\newpage")
+```
+
 ## Derivation of Wilson's "Score Interval" formula
 
 Let $X$ be a binomally distributed random variable and let $q = 1 - p$:
@@ -308,11 +311,18 @@ This document was produced from an RMarkdown file, the source of which should be
 
 Revisions:
 
-- January 23, First revision
-- January 25, Added upper confidence limits plot
+- January 23, 2019, First revision
+- January 25, 2019, Added upper confidence limits plot
+- February 21, 2019, Improved references
 
 ## References
 
-Agresti, Alan; Coull, Brent A. (1998). "Approximate is better than 'exact' for interval estimation of binomial proportions". The American Statistician. 52: 119-126. [doi:10.2307/2685469](https://doi.org/10.2307/2685469).
+Aragon, Tomas J. (2017). "epitools: Epidemiology Tools". *R package* version 0.5-10. [https://CRAN.R-project.org/package=epitools](https://CRAN.R-project.org/package=epitools)
 
-Wilson, E. B. (1927). "Probable inference, the law of succession, and statistical inference". Journal of the American Statistical Association. 22: 209-212. [doi:10.1080/01621459.1927.10502953](https://doi.org/10.1080/01621459.1927.10502953).
+Agresti, Alan; Coull, Brent A. (1998). "Approximate is better than 'exact' for interval estimation of binomial proportions". *The American Statistician*. 52: 119-126. [doi:10.2307/2685469](https://doi.org/10.2307/2685469).
+
+Newcombe, Robert G.  (1998). "Two-sided confidence intervals for the single proportion: comparison of seven methods". *Statistics in Medicine* 17: 852-857. [PubMed ID: 9595616, doi:10.1002/(SICI)1097-0258(19980430)17:8<857::AID-SIM777>3.0.CO;2-E](https://www.ncbi.nlm.nih.gov/pubmed/9595616).
+
+Wikipedia contributors, "Binomial proportion confidence interval," *Wikipedia, The Free Encyclopedia*, [https://en.wikipedia.org/wiki/Binomial_proportion_confidence_interval](https://en.wikipedia.org/wiki/Binomial_proportion_confidence_interval), accessed February 21, 2019.
+
+Wilson, E. B. (1927). "Probable inference, the law of succession, and statistical inference". *Journal of the American Statistical Association*. 22: 209-212. [doi:10.1080/01621459.1927.10502953](https://doi.org/10.1080/01621459.1927.10502953).
